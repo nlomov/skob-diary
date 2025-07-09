@@ -15,6 +15,8 @@ def format_linenum(line_idx, bounds, filenames):
 
 def main():
     
+    st.set_page_config(layout="wide")
+    
     if 'filenames' not in st.session_state:
         filenames = os.listdir('labels')
         filenames = [fn for fn in filenames if fn.endswith('.txt')]
@@ -66,21 +68,24 @@ def main():
     img_idx = filenames.index(ent_case.split(',')[0] + '.txt')
     img = cv2.imdecode(np.fromfile(f'images/{filenames[img_idx][:-4]}.jpg', dtype=np.uint8), cv2.IMREAD_UNCHANGED)
     
-    fig, ax = plt.subplots(figsize=(5,5))
-    ax.set_axis_off()
-    ax.imshow(img[...,(2,1,0)])
-    h,w = img.shape[0],img.shape[1]
+    col1,col2 = st.columns([0.45,0.55])
     
-    for i,box in enumerate(markup[img_idx]['boxes']):
-        plt.plot(np.array(box)[[1,3,5,7,1]]*w, np.array(box)[[2,4,6,8,2]]*h, linewidth=0.5, color='r' if i == line_idx else 'b')
-    st.pyplot(fig, use_container_width=False)
-    
-    step = 2
-    text = ''.join(l + '  \n' for l in markup[img_idx]['lines'][max(line_idx-step,0):line_idx])
-    text += '**' + markup[img_idx]['lines'][line_idx] + '**  \n'
-    text += ''.join(l + '  \n' for l in markup[img_idx]['lines'][line_idx+1:line_idx+step+1])
-                                            
-    st.write(text.replace('#', '<...>'))
+    with col1:
+        step = 2
+        text = ''.join(l + '  \n' for l in markup[img_idx]['lines'][max(line_idx-step,0):line_idx])
+        text += '**' + markup[img_idx]['lines'][line_idx] + '**  \n'
+        text += ''.join(l + '  \n' for l in markup[img_idx]['lines'][line_idx+1:line_idx+step+1])                                    
+        st.write(text.replace('#', '<...>'))
+        
+    with col2:
+        fig, ax = plt.subplots(figsize=(5,5))
+        ax.set_axis_off()
+        ax.imshow(img[...,(2,1,0)])
+        h,w = img.shape[0],img.shape[1]
+
+        for i,box in enumerate(markup[img_idx]['boxes']):
+            plt.plot(np.array(box)[[1,3,5,7,1]]*w, np.array(box)[[2,4,6,8,2]]*h, linewidth=0.5, color='r' if i == line_idx else 'b')
+        st.pyplot(fig, use_container_width=False)
     
     
 if __name__ == "__main__":
