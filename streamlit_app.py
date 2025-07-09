@@ -53,7 +53,7 @@ def main():
     else:
         entities = st.session_state['entities']
     
-    ent_type = st.sidebar.selectbox('Выберите тип сущности:', sorted(entities.keys()))
+    ent_type = st.sidebar.selectbox('Выберите тип сущности:', entities.keys())
     ent_name = st.sidebar.selectbox('Выберите сущность:', sorted(entities[ent_type].keys()))
     
     st.sidebar.text_area(label='Описание', value=entities[ent_type][ent_name]['Описание'], height=100, disabled=True, label_visibility="collapsed")
