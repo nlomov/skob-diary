@@ -76,7 +76,7 @@ def main():
     st.pyplot(fig, use_container_width=False)
     
     step = 2
-    text = ''.join(l + '  \n' for l in markup[img_idx]['lines'][line_idx-step:line_idx])
+    text = ''.join(l + '  \n' for l in markup[img_idx]['lines'][max(line_idx-step,0):line_idx])
     text += '**' + markup[img_idx]['lines'][line_idx] + '**  \n'
     text += ''.join(l + '  \n' for l in markup[img_idx]['lines'][line_idx+1:line_idx+step+1])
                                             
