@@ -76,7 +76,7 @@ def main():
         text = ''.join(l + '  \n' for l in markup[img_idx]['lines'][max(line_idx-step,0):line_idx])
         text += '**' + markup[img_idx]['lines'][line_idx] + '**  \n'
         text += ''.join(l + '  \n' for l in markup[img_idx]['lines'][line_idx+1:line_idx+step+1])                                    
-        st.write(text.replace('#', '<...>'))
+        st.markdown(text.replace('#', '<...>').replace('.','\.'))
         
     with col2:
         fig, ax = plt.subplots(figsize=(5,5))
