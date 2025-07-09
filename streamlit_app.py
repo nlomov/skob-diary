@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def format_linenum(line_idx, bounds, filenames):
-    img_idx = np.where(line_idx-1 <= bounds)[0][0]
+    img_idx = np.where(line_idx <= bounds)[0][0]
     if img_idx > 0:
         line_idx -= bounds[img_idx-1]
     return filenames[img_idx][:-4] + ', ' + str(line_idx)
@@ -26,6 +26,7 @@ def main():
             with open(f'labels/{fn[:-4]}.txt', encoding='utf-8') as f:
                 text = f.read().strip().split('\n')
                 markup.append({'filename': fn, 'lines': text[1::3], 'boxes': [list(map(float, t.split())) for t in text[0::3]]})
+        
         bounds = np.cumsum(np.array([len(m['lines']) for m in markup]))
         st.session_state['filenames'] = filenames
         st.session_state['markup'] = markup
