@@ -54,7 +54,7 @@ def main():
     
     if 'entities' not in st.session_state:
         files = os.listdir('jsons')
-        files = [fn for fn in files if fn.endswith('.json')]
+        files = sorted([fn for fn in files if fn.endswith('.json')])
         entities = {}
         for fn in files:
             with open(f'jsons/{fn}', 'rb') as json_data:
