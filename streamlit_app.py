@@ -87,7 +87,7 @@ def main():
                 entities = update_entities(entities, bounds, filenames, data)
         else:
             files = os.listdir('jsons')
-            files = [fn for fn in files if fn.endswith('.json')]
+            files = sorted([fn for fn in files if fn.endswith('.json')])
             entities = {}
             for fn in files:
                 with open(f'jsons/{fn}', 'rb') as json_data:
