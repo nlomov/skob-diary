@@ -79,7 +79,7 @@ def update_distances():
     num_lines = sum([len([l for l in m['lines'] if l != '#']) for i,m in enumerate(st.session_state['markup']) \
                      if sum(st.session_state['pagewise'][i],[])])
     if 'sliderDist' not in st.session_state:
-        line_dist = 3
+        line_dist = 2
     else:
         line_dist = st.session_state['sliderDist']
     p = (2*line_dist+1) / num_lines
