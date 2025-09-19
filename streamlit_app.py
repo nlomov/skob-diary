@@ -195,14 +195,14 @@ def main():
     json_fn = st.sidebar.file_uploader('Загрузить свой список', type=['.json','.txt'], accept_multiple_files=True)
     if 'json_names' not in st.session_state:
         st.session_state['json_names'] = []
-        
     json_names = sorted([fn.name for fn in json_fn])
+    
     if json_names != st.session_state['json_names']: 
         if json_names:
             st.session_state['entities'] = {}
             for fn in json_fn:
                 data = json.load(fn)
-            update_entities(data)
+                update_entities(data)
         else:
             files = os.listdir('jsons')
             files = sorted([fn for fn in files if fn.endswith('.json')])
