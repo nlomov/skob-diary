@@ -282,24 +282,28 @@ def main():
                 text += '['+ filenames[p2][6:] + '/' + str(l2+1) + '] ' + markup[p2]['lines'][l2] + '  \n'
             st.markdown(text.replace('#', '<...>').replace('.','\.'))
             
-            line_idxs = st.session_state['line_idxs'][tag]
+            line_idxs = st.session_state['line_idxs'][tag] - 1
+            line_idxs1 = st.session_state['line_idxs'][tag1] - 1
             sigma = 10
             yt = np.arange(1, st.session_state['line_max']+1)
-            xt = (1/np.sqrt(2*np.pi*sigma) * np.exp(-1/2*((yt-line_idxs[...,None])/sigma)**2)).sum(axis=0)
+            xt = (1/np.sqrt(2*np.pi*sigma) * np.exp(-1/2*((yt-line_idxs[...,None]-1)/sigma)**2)).sum(axis=0)
+            xt1 = (1/np.sqrt(2*np.pi*sigma) * np.exp(-1/2*((yt-line_idxs1[...,None]-1)/sigma)**2)).sum(axis=0)
             
             fig,ax = plt.subplots(figsize=(5,10))
             plt.ylim([0, st.session_state['line_max']])
             plt.xticks([])
             plt.plot(xt, yt, 'C0')
-            plt.plot(xt[line_idxs-1], line_idxs, 'C0o')
-            
-            line_idxs1 = st.session_state['line_idxs'][tag1]
-            xt1 = (1/np.sqrt(2*np.pi*sigma) * np.exp(-1/2*((yt-line_idxs1[...,None])/sigma)**2)).sum(axis=0)
             plt.plot(xt1, yt, 'C2--')
-            plt.plot(xt1[line_idxs1-1], line_idxs1, 'C2o')
-            plt.plot(xt[line_idxs[case_idx]-1], line_idxs[case_idx]-1, 'C1o')
+            plt.plot(xt[line_idxs], yt[line_idxs], 'C0o')
+            plt.plot(xt1[line_idxs1], yt[line_idxs1], 'C2o')
+            
+            plt.plot(xt[[m[0]-1 for m in matches]], [m[0] for m in matches], 'C3o')
+            plt.plot(xt1[[m[1]-1 for m in matches]], [m[1] for m in matches], 'C4o')
+            
+            plt.plot(xt[line_idxs[case_idx]], yt[line_idxs[case_idx]], 'C1o')
             ax.invert_yaxis()
             plt.title(f'{len(line_idxs)}/{len(line_idxs1)}')
+            ax.legend([tag[:tag.find('(')-1], tag1[:tag1.find('(')-1]])
             st.pyplot(fig, use_container_width=False)
         
     with col2:
