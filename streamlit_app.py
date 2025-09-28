@@ -289,21 +289,38 @@ def main():
             xt = (1/np.sqrt(2*np.pi*sigma) * np.exp(-1/2*((yt-line_idxs[...,None]-1)/sigma)**2)).sum(axis=0)
             xt1 = (1/np.sqrt(2*np.pi*sigma) * np.exp(-1/2*((yt-line_idxs1[...,None]-1)/sigma)**2)).sum(axis=0)
             
-            fig,ax = plt.subplots(figsize=(5,10))
-            plt.ylim([0, st.session_state['line_max']])
-            plt.xticks([])
-            plt.plot(xt, yt, 'C0')
-            plt.plot(xt1, yt, 'C2--')
-            plt.plot(xt[line_idxs], yt[line_idxs], 'C0o')
-            plt.plot(xt1[line_idxs1], yt[line_idxs1], 'C2o')
+            if True:
+                fig,ax = plt.subplots(figsize=(5,10))
+                plt.ylim([0, st.session_state['line_max']])
+                plt.xticks([])
+                plt.plot(xt, yt, 'C0')
+                plt.plot(xt1, yt, 'C2--')
+                plt.plot(xt[line_idxs], yt[line_idxs], 'C0o')
+                plt.plot(xt1[line_idxs1], yt[line_idxs1], 'C2o')
+
+                plt.plot(xt[[m[0]-1 for m in matches]], [m[0] for m in matches], 'C3o')
+                plt.plot(xt1[[m[1]-1 for m in matches]], [m[1] for m in matches], 'C4o')
+
+                plt.plot(xt[line_idxs[case_idx]], yt[line_idxs[case_idx]], 'C1o')
+                ax.invert_yaxis()
+                ax.set_ylabel('Номер строки', rotation=-90)
+                plt.title(f'{len(line_idxs)}/{len(line_idxs1)}')
+                ax.legend([tag[:tag.find('(')-1], tag1[:tag1.find('(')-1]])
+            else:
+                fig,ax = plt.subplots(figsize=(10,5))
+                plt.xlim([0, st.session_state['line_max']])
+                plt.yticks([])
+                plt.plot(yt, xt, 'C0')
+                plt.plot(yt, xt1, 'C2--')
+                plt.plot(yt[line_idxs], xt[line_idxs], 'C0o')
+                plt.plot(yt[line_idxs1], xt1[line_idxs1], 'C2o')
+
+                plt.plot([m[0] for m in matches], xt[[m[0]-1 for m in matches]], 'C3o')
+                plt.plot([m[1] for m in matches], xt1[[m[1]-1 for m in matches]], 'C4o')
+                ax.set(xlabel='Номер строки')
+                plt.title(f'{len(line_idxs)}/{len(line_idxs1)}')
+                ax.legend([tag[:tag.find('(')-1], tag1[:tag1.find('(')-1]])
             
-            plt.plot(xt[[m[0]-1 for m in matches]], [m[0] for m in matches], 'C3o')
-            plt.plot(xt1[[m[1]-1 for m in matches]], [m[1] for m in matches], 'C4o')
-            
-            plt.plot(xt[line_idxs[case_idx]], yt[line_idxs[case_idx]], 'C1o')
-            ax.invert_yaxis()
-            plt.title(f'{len(line_idxs)}/{len(line_idxs1)}')
-            ax.legend([tag[:tag.find('(')-1], tag1[:tag1.find('(')-1]])
             st.pyplot(fig, use_container_width=False)
         
     with col2:
