@@ -128,7 +128,9 @@ def make_pagewise():
         for jn,ent_name in enumerate(entities[ent_type]):
             st.session_state['line_idxs'][f'{ent_name} ({ent_type})'] = np.array([m['Номер строки'] \
                                                                                   for m in entities[ent_type][ent_name]['Упоминания']])
-            st.session_state['dates'][f'{ent_name} ({ent_type})'] = [m['Дата'] for m in entities[ent_type][ent_name]['Упоминания']]
+            st.session_state['dates'][f'{ent_name} ({ent_type})'] = \
+                list(map(lambda x: markup[x[0]]['dates'][x[1]], \
+                [format_linenum(m['Номер строки']) for m in entities[ent_type][ent_name]['Упоминания']]))
             for jm,ent_ment in enumerate(entities[ent_type][ent_name]['Упоминания']):
                 pagewise[ent_ment['page_idx']][ent_ment['line_idx']].append((ent_name,[jt,jn,jm]))
                 st.session_state['line_max'] = max(st.session_state['line_max'], ent_ment['Номер строки'])
@@ -153,7 +155,11 @@ def main():
         for fn in filenames:
             with open(f'labels/{fn}.txt', encoding='utf-8') as f:
                 text = f.read().strip().split('\n')
-                markup.append({'filename': fn, 'lines': text[1::3], 'boxes': [list(map(float, t.split())) for t in text[0::3]]})
+                markup.append({'filename': fn,
+                               'lines': text[1::3],
+                               'boxes': [list(map(float, t.split())) for t in text[0::3]],
+                               'dates': text[2::3],
+                              })
         bounds = np.cumsum(np.array([len(m['lines']) for m in markup]))
         st.session_state['filenames'] = filenames
         st.session_state['markup'] = markup
@@ -181,7 +187,9 @@ def main():
                                     key='boxName', on_change=nameOnChange)
     st.sidebar.text_area(label='Описание', value=entities[ent_type][ent_name]['Описание'], height=100, disabled=True, label_visibility="collapsed")
     mentions = entities[ent_type][ent_name]['Упоминания']
-    values = [(m['Дата'] if 'Дата' in m else 'Неизвестно') + ' – ' + m['Роль'] for m in mentions]
+    values = list(map(lambda x: markup[x[0]]['dates'][x[1]] + ' – ' + x[2], \
+                      [format_linenum(m['Номер строки'])+(m['Роль'],) for m in mentions]))
+    #values = [(m['Дата'] if 'Дата' in m else 'Неизвестно') + ' – ' + m['Роль'] for m in mentions]
     st.session_state['values'] = values
     ent_case = st.sidebar.selectbox('Выберите упоминание:', values, index=st.session_state['mention'][2], \
                                     key='boxCase', on_change=caseOnChange)
