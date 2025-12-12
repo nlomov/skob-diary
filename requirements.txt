@@ -1,4 +1,4 @@
-streamlit==1.52.0
+streamlit==1.47.0
 numpy==1.25.0
 opencv-python
 matplotlib

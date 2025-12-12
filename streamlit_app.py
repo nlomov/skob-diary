@@ -424,7 +424,7 @@ def main():
                     plt.title(f'{len(line_idxs)}/{len(line_idxs1)}')
                     ax.legend([tag[:tag.find('(')-1], tag1[:tag1.find('(')-1]])
 
-                st.pyplot(fig, width='content')
+                st.pyplot(fig, use_container_width=False)
         
     with col2:
         
@@ -433,12 +433,12 @@ def main():
         with tab1:
             _,col21,col22,col23,_ = st.columns([0.01,0.24,0.4,0.24,0.11])
             with col21:
-                st.button('Предыдущая', key='btnPrev', width='stretch', disabled=page_idx==0, on_click=prevOnClick)
+                st.button('Предыдущая', key='btnPrev', use_container_width=True, disabled=page_idx==0, on_click=prevOnClick)
             with col22:
                 st.selectbox('Выберите страницу', filenames, key='boxPage', label_visibility='collapsed', index=page_idx, \
                              on_change=pageOnChange)
             with col23:
-                st.button('Следующая', key='btnNext', width='stretch', disabled=page_idx==len(filenames)-1, on_click=nextOnClick)
+                st.button('Следующая', key='btnNext', use_container_width=True, disabled=page_idx==len(filenames)-1, on_click=nextOnClick)
 
             img = cv2.imdecode(np.fromfile(f"images/{filenames[page_idx] + '.jpg'}", dtype=np.uint8), cv2.IMREAD_UNCHANGED)
             fig,ax = plt.subplots(figsize=(5,5))
@@ -448,7 +448,7 @@ def main():
 
             for i,box in enumerate(markup[page_idx]['boxes']):
                 plt.plot(np.array(box)[[1,3,5,7,1]]*w, np.array(box)[[2,4,6,8,2]]*h, linewidth=0.5, color='r' if i == line_idx else 'b')
-            st.pyplot(fig, width='content')
+            st.pyplot(fig, use_container_width=False)
             
         with tab2:
             folium_map = folium.Map(attributionControl=0)
@@ -482,7 +482,7 @@ def main():
                     popup = folium.Popup(text, parse_html=False, max_width=300)
                     folium.RegularPolygonMarker(location=(lon,lat), color=color, fill_color=color, number_of_sides=3, radius=10, weight=1, \
                                                 fill_opacity=1, popup=popup, rotation=ang).add_to(folium_map)
-            st_folium(folium_map, width='content')
+            st_folium(folium_map, use_container_width=False)
             
         with tab3:
             indicator = st.selectbox('Выберите показатель:', options=entities['Показатель'] if 'Показатель' in entities else None)
@@ -500,7 +500,7 @@ def main():
                 fig,ax = plt.subplots(figsize=(10,6))
                 plt.plot(xt, yt, 'C0-o')
                 plt.grid(True)
-                st.pyplot(fig, width='content')
+                st.pyplot(fig, use_container_width=False)
                 st.markdown(text.replace('#', '<...>').replace('.','\.'))    
     
 if __name__ == "__main__":
