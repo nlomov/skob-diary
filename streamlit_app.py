@@ -13,8 +13,9 @@ import geopy
 from geopy.geocoders import Nominatim
 import folium
 from streamlit_folium import st_folium
+import random
+from config import *
 
-dataset = 'skob'
 start = {'skob': 11, 'litke': 7}[dataset]
 vlen = {'skob': 3, 'litke': 1}[dataset]
 
@@ -32,42 +33,62 @@ def format_linenum(line_idx):
 def update_entities(data):
     loc_seq = st.session_state['loc_seq']
     entities = st.session_state['entities']
-    for d in data:
-        try:
-            if d['Тип'] not in entities:
-                entities[d['Тип']] = {}
-            for a in d['Упоминания']:
-                a['page_idx'],a['line_idx'] = format_linenum(a['Номер строки'])
-            if d['Имя'] not in entities[d['Тип']]:
-                entities[d['Тип']][d['Имя']] = {'Описание': d['Описание'], 'Упоминания': d['Упоминания']}
-            else:
-                entities[d['Тип']][d['Имя']]['Описание'] += ' ' + d['Описание']
-                entities[d['Тип']][d['Имя']]['Упоминания'] += d['Упоминания']
-        except:
-            pass
-        if d['Тип'] == 'Место':
-            loc_seq += [{'Имя': d['Имя'], 'Номер строки': m['Номер строки']} for m in d['Упоминания']]
+    for part in data:
+        for d in part:
+            try:
+                if d['Тип'] not in entities:
+                    entities[d['Тип']] = {}
+                for a in d['Упоминания']:
+                    a['Номер строки'] = int(a['Номер строки'])
+                    a['page_idx'],a['line_idx'] = format_linenum(a['Номер строки'])
+                if d['Имя'] not in entities[d['Тип']]:
+                    entities[d['Тип']][d['Имя']] = {'Описание': d['Описание'], 'Упоминания': d['Упоминания']}
+                else:
+                    entities[d['Тип']][d['Имя']]['Описание'] += '\n\n' + d['Описание']
+                    entities[d['Тип']][d['Имя']]['Упоминания'] += d['Упоминания']
+                if d['Тип'] == 'Место':
+                    loc_seq += [{'Имя': d['Имя'], 'Номер строки': m['Номер строки']} for m in d['Упоминания']]
+            except:
+                pass
     loc_seq.sort(key = lambda x: x['Номер строки']) 
+    
+    for ent_type in entities:
+        for ent_name in entities[ent_type]:
+            entities[ent_type][ent_name]['Упоминания'].sort(key = lambda x: x['Номер строки'])
     
     types = list(entities.keys())
     types.sort(key = lambda x: 0 if x == 'Персона' else 1 if x == 'Место' else 2)
     entities = {k: entities[k] for k in types}
     
+    if not entities:
+        entities = {'Тип': {'Имя': {'Описание': 'Описание', 'Упоминания': [{'Роль':'Роль','Номер строки':1,'page_idx':1,'line_idx':1}]}}}
+    
     st.session_state['entities'] = entities
     st.session_state['loc_seq'] = loc_seq
 
 def typeOnChange():
-    st.session_state['mention'] = [list(st.session_state['entities'].keys()).index(st.session_state['boxType']), 0, 0]
+    try:
+        idx = list(st.session_state['entities'].keys()).index(st.session_state['boxType'])
+    except:
+        idx = 0
+    st.session_state['mention'] = [idx, 0, 0]
     st.session_state['force'] = False
 
 def nameOnChange():
     ent_type = list(st.session_state['entities'].keys())[st.session_state['mention'][0]]
-    st.session_state['mention'] = [st.session_state['mention'][0], \
-                                   list(st.session_state['entities'][ent_type].keys()).index(st.session_state['boxName']), 0]
+    try:
+        idx = list(st.session_state['entities'][ent_type].keys()).index(st.session_state['boxName'])
+    except:
+        idx = 0
+    st.session_state['mention'] = [st.session_state['mention'][0], idx, 0]
     st.session_state['force'] = False
     
 def caseOnChange():
-    st.session_state['mention'] = st.session_state['mention'][:2] + [st.session_state['values'].index(st.session_state['boxCase'])]
+    try:
+        idx = st.session_state['values'].index(st.session_state['boxCase'])
+    except:
+        idx = 0
+    st.session_state['mention'] = st.session_state['mention'][:2] + [idx]
     st.session_state['force'] = False
     
 def prevOnClick():
@@ -104,7 +125,7 @@ def update_distances():
     else:
         line_dist = st.session_state['sliderDist']
     
-    p = (2*line_dist+1) / num_lines
+    p = (2*line_dist+1) / max(1,num_lines)
     distances = np.zeros((len(st.session_state['line_idxs']), len(st.session_state['line_idxs'])), dtype=int)
     probs = np.zeros((len(st.session_state['line_idxs']), len(st.session_state['line_idxs'])))
     matches = {k: {} for k in st.session_state['line_idxs'].keys()}
@@ -162,23 +183,18 @@ def make_pagewise():
     update_distances()
 
 def main():
-    
-    if 'mention' not in st.session_state:
-        st.session_state['mention'] = [0,0,0]
-    if 'page_idx' not in st.session_state:
-        st.session_state['page_idx'] = 0
-    if 'force' not in st.session_state:
-        st.session_state['force'] = False
+        
     if 'geolocator' not in st.session_state:
         st.session_state['geolocator'] = Nominatim(user_agent=f"{dataset}-diary")
     if 'loc_seq' not in st.session_state:
         st.session_state['loc_seq'] = []
-    
+        
     if 'filenames' not in st.session_state:
         filenames = os.listdir('labels')
         filenames = [fn[:-len('.txt')] for fn in filenames if fn.endswith('.txt')]        
         
-        filenames.sort(key=lambda x: 1000*int(x[start-2-vlen:start-2]) + (int(x[start:]) if x[start:].isdigit() else int(x[start:-2])) + 0.5*('об' in x))
+        filenames.sort(key=lambda x: 1000*int(x[start-2-vlen:start-2]) + int(''.join(c for c in x[start:] if c.isdigit())) + 0.25*('a' in x)+\
+                       0.25*('об' in x))
         
         markup = []
         for fn in filenames:
@@ -202,23 +218,32 @@ def main():
         files = os.listdir('jsons')
         files = sorted([fn for fn in files if fn.endswith('.json')])
         st.session_state['entities'] = {}
+        data = []
         for fn in files:
             with open(f'jsons/{fn}', 'rb') as json_data:
-                data = json.load(json_data)
-            update_entities(data)
+                data.append(json.load(json_data))
+        update_entities(data)
         make_pagewise()
+    
+    if 'mention' not in st.session_state:
+        st.session_state['mention'] = next(t for t in next(s for s in st.session_state['pagewise'] if any(s)) if any(t))[0][1]
+    if 'page_idx' not in st.session_state:
+        st.session_state['page_idx'] = 0
+    if 'force' not in st.session_state:
+        st.session_state['force'] = False
     
     if 'locations' not in st.session_state:
         locs = pd.read_csv('locations.csv', encoding='utf-8', sep='\t')
         st.session_state['locations'] = {loc['Имя']: (loc['Широта'],loc['Долгота']) for i,loc in locs.iterrows()}
-    
+
     entities = st.session_state['entities']
     pagewise = st.session_state['pagewise']
     locations = st.session_state['locations']
     
-    ent_type = st.sidebar.selectbox('Выберите тип сущности:', entities.keys(), index=st.session_state['mention'][0], \
+    ent_type = st.sidebar.selectbox('Выберите тип сущности:', entities.keys(), index=min(len(entities)-1,st.session_state['mention'][0]), \
                                     key='boxType', on_change=typeOnChange)
-    ent_name = st.sidebar.selectbox('Выберите сущность:', entities[ent_type].keys(), index=st.session_state['mention'][1], \
+    ent_name = st.sidebar.selectbox('Выберите сущность:', entities[ent_type].keys(), \
+                                    index=min(len(entities[ent_type])-1, st.session_state['mention'][1]), \
                                     key='boxName', on_change=nameOnChange)
     st.sidebar.text_area(label='Описание', value=entities[ent_type][ent_name]['Описание'], height=100, disabled=True, label_visibility="collapsed")
     mentions = entities[ent_type][ent_name]['Упоминания']
@@ -226,9 +251,12 @@ def main():
                       [format_linenum(m['Номер строки'])+(m['Роль'],) for m in mentions]))
     #values = [(m['Дата'] if 'Дата' in m else 'Неизвестно') + ' – ' + m['Роль'] for m in mentions]
     st.session_state['values'] = values
-    ent_case = st.sidebar.selectbox('Выберите упоминание:', values, index=st.session_state['mention'][2], \
+    ent_case = st.sidebar.selectbox('Выберите упоминание:', values, index=min(len(values)-1, st.session_state['mention'][2]), \
                                     key='boxCase', on_change=caseOnChange)
-    case_idx = values.index(ent_case)
+    try:
+        case_idx = values.index(ent_case)
+    except:
+        case_idx = 0
     
     if st.session_state['force']:
         page_idx,line_idx = st.session_state['page_idx'],-1
@@ -245,17 +273,19 @@ def main():
         if json_names:
             if not append:
                 st.session_state['entities'] = {}
+            data = []
             for fn in json_fn:
-                data = json.load(fn)
-                update_entities(data)
+                data.append(json.load(fn))
+            update_entities(data)
         else:
             files = os.listdir('jsons')
             files = sorted([fn for fn in files if fn.endswith('.json')])
             st.session_state['entities'] = {}
+            data = []
             for fn in files:
                 with open(f'jsons/{fn}', 'rb') as json_data:
-                    data = json.load(json_data)
-                update_entities(data)
+                    data.append(json.load(json_data))
+            update_entities(data)
         make_pagewise()
         
         st.session_state['json_names'] = json_names
@@ -287,6 +317,31 @@ def main():
                     st.button(str(i+1), key=f'{i}_{page_idx}', disabled=True)
                 for j,ment,col in zip(list(range(len(ments))),ments,cols[1:]):
                     with col:
+                        colors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']
+                        color = colors[ment[1][0] % len(colors)]
+                        color = 'rgb(' + (''.join( str( (int(color[i:i+2], 16)+255)//2)+',' for i in [1,3,5]))[:-1] + ')'
+                        
+                        mark = f'button-after-{i}-{j}'
+                        st.markdown(
+                            """
+                            <style>
+                            .element-container:has(style){
+                                display: none;
+                            }
+                            #button-after {
+                                display: none;
+                            }
+                            .element-container:has(#""" + mark + """) {
+                                display: none;
+                            }
+                            .element-container:has(#""" + mark + """) + div button {
+                                background-color: """ + color + """;
+                                }
+                            </style>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(f'<span id="{mark}"></span>', unsafe_allow_html=True)
                         if st.button(ment[0], key=f'btn_{i}_{j}'):
                             st.session_state['mention'] = ment[1]
                             st.session_state['force'] = False
@@ -294,7 +349,7 @@ def main():
                             
         with tab2:
             text = ''.join('[' + str(i+1) + '] ' + l + '  \n' for i,l in enumerate(markup[page_idx]['lines']))
-            st.markdown(text.replace('#', '<...>').replace('.','\.'))
+            st.text(text.replace('#', '<...>'))
             
         with tab3:
             tag = f'{ent_name} ({ent_type})'
