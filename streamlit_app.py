@@ -233,7 +233,7 @@ def main():
         st.session_state['force'] = False
     
     if 'locations' not in st.session_state:
-        locs = pd.read_csv('locations.csv', encoding='utf-8', sep='\t')
+        locs = pd.read_csv('locations.csv', encoding='utf-16', sep='\t')
         st.session_state['locations'] = {loc['Имя']: (loc['Широта'],loc['Долгота']) for i,loc in locs.iterrows()}
 
     entities = st.session_state['entities']
