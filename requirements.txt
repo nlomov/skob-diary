@@ -1,6 +1,6 @@
 streamlit==1.47.0
 numpy==1.25.0
-opencv-python
+opencv-python-headless
 matplotlib
 scipy==1.13.0
 geopy
