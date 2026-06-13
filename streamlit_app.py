@@ -15,6 +15,7 @@ import folium
 from streamlit_folium import st_folium
 import random
 from config import *
+import pickle
 
 start = {'skob': 11, 'litke': 7}[dataset]
 vlen = {'skob': 3, 'litke': 1}[dataset]
@@ -180,8 +181,7 @@ def make_pagewise():
                 st.session_state['line_max'] = max(st.session_state['line_max'], ent_ment['Номер строки'])
     st.session_state['entities'] = entities
     st.session_state['pagewise'] = pagewise
-    update_distances()
-
+    
 def main():
         
     if 'geolocator' not in st.session_state:
@@ -214,6 +214,10 @@ def main():
         markup = st.session_state['markup']
         bounds = st.session_state['bounds']
     
+    if 'full_text' not in st.session_state:
+        st.session_state['full_text'] = ''.join((''.join(f'[{(0 if i==0 else bounds[i-1])+j+1}] {l}\n' for j,l in enumerate(m['lines'])) \
+                                                 for i,m in enumerate(st.session_state['markup'])))
+    
     if 'entities' not in st.session_state:
         files = os.listdir('jsons')
         files = sorted([fn for fn in files if fn.endswith('.json')])
@@ -224,6 +228,10 @@ def main():
                 data.append(json.load(json_data))
         update_entities(data)
         make_pagewise()
+        with open('distances.pkl','rb') as f:
+            pickled = pickle.load(f)
+        for key,value in pickled.items():
+            st.session_state[key] = value
     
     if 'mention' not in st.session_state:
         st.session_state['mention'] = next(t for t in next(s for s in st.session_state['pagewise'] if any(s)) if any(t))[0][1]
@@ -265,6 +273,7 @@ def main():
     
     json_fn = st.sidebar.file_uploader('Загрузить свой список', type=['.json','.txt'], accept_multiple_files=True)
     append = st.sidebar.checkbox('Добавить к исходной базе', value=False, key='append_cbox')
+    download = st.sidebar.download_button('Скачать построчный текст', st.session_state['full_text'], file_name='Дневники Сухово-Кобылина')
     if 'json_names' not in st.session_state:
         st.session_state['json_names'] = []
     json_names = sorted([fn.name for fn in json_fn])
@@ -287,6 +296,7 @@ def main():
                     data.append(json.load(json_data))
             update_entities(data)
         make_pagewise()
+        update_distances()
         
         st.session_state['json_names'] = json_names
         st.session_state['mention'] = [0,0,0]
@@ -308,7 +318,7 @@ def main():
                 text += '**[' + str(line_idx+1) + '] ' + markup[page_idx]['lines'][line_idx] + '**  \n'
                 text += ''.join('[' + str(i+1) + '] ' + l + '  \n' for i,l in zip(list(range(line_idx+1, line_idx+step+1)), \
                                                                                   markup[page_idx]['lines'][line_idx+1:line_idx+step+1]))
-                st.markdown(text.replace('#', '<...>').replace('.','\.'))
+                st.markdown(text.replace('#', '<...>').replace('.','\.'), unsafe_allow_html=True)
 
             for i,ments in enumerate(pagewise[page_idx]):
                 lengths = [0*len(ment[0])+1 for ment in ments]
@@ -349,7 +359,7 @@ def main():
                             
         with tab2:
             text = ''.join('[' + str(i+1) + '] ' + l + '  \n' for i,l in enumerate(markup[page_idx]['lines']))
-            st.text(text.replace('#', '<...>'))
+            st.markdown(text.replace('#', '<...>').replace('.','\.'), unsafe_allow_html=True)
             
         with tab3:
             tag = f'{ent_name} ({ent_type})'
@@ -383,7 +393,7 @@ def main():
                             text += '**' + date1 + ' – ' + date2 + '**  \n'
                     text += '['+ filenames[p1][start-2-vlen:] + '/' + str(l1+1) + '] ' + markup[p1]['lines'][l1] + '  \n'
                     text += '['+ filenames[p2][start-2-vlen:] + '/' + str(l2+1) + '] ' + markup[p2]['lines'][l2] + '  \n'
-                st.markdown(text.replace('#', '<...>').replace('.','\.'))
+                st.markdown(text.replace('#', '<...>').replace('.','\.'), unsafe_allow_html=True)
 
                 line_idxs = st.session_state['line_idxs'][tag] - 1
                 line_idxs1 = st.session_state['line_idxs'][tag1] - 1
@@ -501,7 +511,7 @@ def main():
                 plt.plot(xt, yt, 'C0-o')
                 plt.grid(True)
                 st.pyplot(fig, use_container_width=False)
-                st.markdown(text.replace('#', '<...>').replace('.','\.'))    
+                st.markdown(text.replace('#', '<...>').replace('.','\.'), unsafe_allow_html=True)    
     
 if __name__ == "__main__":
     try:
