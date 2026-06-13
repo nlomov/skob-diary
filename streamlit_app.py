@@ -286,6 +286,8 @@ def main():
             for fn in json_fn:
                 data.append(json.load(fn))
             update_entities(data)
+            make_pagewise()
+            update_distances()
         else:
             files = os.listdir('jsons')
             files = sorted([fn for fn in files if fn.endswith('.json')])
@@ -295,9 +297,12 @@ def main():
                 with open(f'jsons/{fn}', 'rb') as json_data:
                     data.append(json.load(json_data))
             update_entities(data)
-        make_pagewise()
-        update_distances()
-        
+            make_pagewise()
+            with open('distances.pkl','rb') as f:
+                pickled = pickle.load(f)
+            for key,value in pickled.items():
+                st.session_state[key] = value
+
         st.session_state['json_names'] = json_names
         st.session_state['mention'] = [0,0,0]
         st.session_state['force'] = False
